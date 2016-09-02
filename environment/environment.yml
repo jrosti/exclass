@@ -1,0 +1,16 @@
+name: ontrail-dl
+dependencies:
+- python=3.5.1
+- openblas=0.2.14
+- pandas=0.18.1
+- scipy=0.17.0
+- notebook=4.2.1
+- ipython-notebook=4.0.4
+- pymongo=3.0.3
+- futures=3.0.3
+- pip
+- pip:
+  - https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.9.0-cp35-cp35m-linux_x86_64.whl
+  - configargparse==0.10.0
+  - urllib3==1.14
+  - neobunch==2.0.2
