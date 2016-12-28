@@ -74,7 +74,7 @@ class Data(object):
         if os.path.isfile(fname):
             print("Using cached data")
             with open(fname, 'rb') as f:
-                self.docs = pickle.load(f)
+                self.docs = pickle.load(f)#[0:10000]
         else:
             otdb = self.mongo.ontrail.exercise
             projection = dict(duration=1,

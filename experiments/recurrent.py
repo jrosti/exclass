@@ -41,7 +41,7 @@ class XRNNCell(tf.nn.rnn_cell.RNNCell):
 
 def build_rnn():
     input = tf.placeholder(tf.float32, shape=(None, MAX_TIME, 128), name='input')
-    outputs, state = tf.nn.dynamic_rnn(XRNNCell(), inputs=input, dtype=tf.float32)
+    outputs, state = tf.nn.dynamic_rnn(tf.nn.rnn_cell.LSTMCell(100), inputs=input, dtype=tf.float32)
     return input, outputs, state
 
 
@@ -54,7 +54,7 @@ def train(epochs=2, batch_size=20, learning_rate=.001):
     inp, outputs, state = build_rnn()
     Wout = tf.get_variable('Wout', (100, 18), initializer=orthogonal_initializer())
     bout = tf.get_variable('bout', (18,))
-    logits = tf.nn.relu(tf.matmul(state, Wout) + bout)
+    logits = tf.nn.relu(tf.matmul(outputs[:, -1], Wout) + bout)
     inp_labels = tf.placeholder(tf.int32, (None,))
     loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits, inp_labels))
     train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)
