@@ -10,7 +10,7 @@ from operator import itemgetter
 from pymongo import MongoClient
 
 from utils.corpus import text_to_tokens
-from . to_word2vec import word_vec_fn
+from . data_word2vec import word_vec_fn
 
 
 class Data(object):
@@ -56,7 +56,7 @@ class Data(object):
         return feats
 
     def _word_features(self, o):
-        sentences = [[self.word2vec(t) for t in text_to_tokens(o['title'])] + [self.word2vec(o['user'])]]
+        sentences = [[self.word2vec('adsf')] + [self.word2vec(t) for t in text_to_tokens(o['title'])]]
         for s in o['body'].split('.'):
             sentences.append([self.word2vec(t) for t in text_to_tokens(s)])
         return sentences

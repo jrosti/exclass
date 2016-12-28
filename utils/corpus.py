@@ -1,7 +1,3 @@
-import numpy as np
-
-from random import shuffle
-
 import re
 import operator
 

@@ -24,9 +24,10 @@ def stack_layers(bottom, layer_params, builder_func):
     return list(accumulate([bottom] + layer_params, builder_func))
 
 
+def sym(w):
+    return w.dot(inv(sqrtm(w.T.dot(w))))
+
 def layer(inp, outp_width, act=tf.nn.relu, dropout=None, name=None):
-    def sym(w):
-        return w.dot(inv(sqrtm(w.T.dot(w))))
 
     N = np.random.standard_normal((width(inp), outp_width))
     W = tf.Variable(sym(N), 'W', dtype=tf.float32)
@@ -72,7 +73,7 @@ def train(epochs=2, layers=[30, 30], lr=0.015, act=tf.nn.relu, batch_size=700, d
 
     for step in range(1000000):
         xb, yb = batches.next_batch()
-        run(train_op, t)
+        run(train_op, (xb, yb))
         if step % 100 == 0:
             ty_ = sess.run(outp, {inp: xb, keep_prob: 1.0})
             valy_ = sess.run(outp, {inp: valx, keep_prob: 1.0})
@@ -89,4 +90,4 @@ def train(epochs=2, layers=[30, 30], lr=0.015, act=tf.nn.relu, batch_size=700, d
     return err(valy_, valy)
 
 if __name__ == '__main__':
-    train(epochs=30, layers=[41, 41, 41], lr=0.009, act=tf.nn.relu, dropout_prob=.8)
+    train(epochs=30, layers=[30, 30, 30], lr=0.009, act=tf.nn.relu, dropout_prob=0.99)

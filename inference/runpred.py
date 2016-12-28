@@ -9,7 +9,7 @@ from experiments.mlp import mlp
 
 b = DataSet(100)
 sess = tf.Session()
-inp, inp_labels, outp, train_op = mlp([41, 41, 41], len(b.xs[0]), b.num_labels,
+inp, inp_labels, outp, train_op = mlp([30, 30, 30], len(b.xs[0]), b.num_labels,
                                       learning_rate=0.0,
                                       act=tf.nn.relu,
                                       dropout_prob=None)
@@ -33,7 +33,7 @@ ys2_ = sess.run(outp, {inp: xs2})
 labels = np.array([b.data.label_of(x) for x in b.data.docs])
 print(sum(ys2_ == labels)/len(ys2_))
 
-hs = [h for h in b.data.docs if h['user'] == 'Peppi']
+hs = [h for h in b.data.docs[int(len(b.data.docs)*0.9):]]
 ps = sess.run(outp, {inp: [b.data.input_vector(h) for h in hs]})
 
 
