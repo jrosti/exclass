@@ -9,7 +9,7 @@ from experiments.mlp import mlp
 
 b = DataSet(100)
 sess = tf.Session()
-inp, inp_labels, outp, train_op = mlp([30, 30, 30], len(b.xs[0]), b.num_labels,
+inp, inp_labels, outp, train_op = mlp([100, 80, 50, 30], len(b.xs[0]), b.num_labels,
                                       learning_rate=0.0,
                                       act=tf.nn.relu,
                                       dropout_prob=None)

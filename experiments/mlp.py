@@ -4,8 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from datasets.dataset import DataSet
-
-from scipy.linalg import sqrtm, inv
+from experiments.initializers import orthogonal_initializer
 
 
 def shape(graph_tensor):
@@ -24,40 +23,43 @@ def stack_layers(bottom, layer_params, builder_func):
     return list(accumulate([bottom] + layer_params, builder_func))
 
 
-def sym(w):
-    return w.dot(inv(sqrtm(w.T.dot(w))))
+i = 0
+
 
 def layer(inp, outp_width, act=tf.nn.relu, dropout=None, name=None):
-
-    N = np.random.standard_normal((width(inp), outp_width))
-    W = tf.Variable(sym(N), 'W', dtype=tf.float32)
+    global i
+    i += 1
+    W = tf.get_variable('W' + str(i), shape=(width(inp), outp_width), dtype=tf.float32,
+                        initializer=orthogonal_initializer())
     b = tf.Variable(tf.random_normal([outp_width], stddev=0.35), 'b')
     pre_act = tf.matmul(inp, W) + b
-    outp = act(pre_act) if not name else act(pre_act, name=name)
+    outp = act(pre_act, name=name)
     return tf.nn.dropout(outp, dropout) if dropout is not None else outp
 
 
-def mlp(hidden_layer_widths, input_width, num_classes, learning_rate=0.01, act=tf.nn.relu, dropout_prob=None):
-    inp = tf.placeholder(tf.float32, shape=(None, input_width), name="input")
-    inp_labels = tf.placeholder(tf.int32, shape=(None,))
-    layerf = lambda i, output_width: layer(i, output_width, act, dropout_prob)
+def mlp(hidden_layer_widths, input_width, act=tf.nn.relu, dropout_prob=None):
+    inp = tf.placeholder(tf.float32, shape=(None, input_width), name="mlp_input")
+    layerf = lambda input, output_width: layer(input, output_width, act, dropout_prob)
     hidden_layers = stack_layers(inp, hidden_layer_widths, layerf)
-    logits = layer(hidden_layers[-1], num_classes, act=tf.identity, name='logits')
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, inp_labels)
-    train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)
-    outp = tf.argmax(logits, last_dim(logits), name="output")
-    return inp, inp_labels, outp, train_op
+    return inp, hidden_layers
 
 
-def train(epochs=2, layers=[30, 30], lr=0.015, act=tf.nn.relu, batch_size=700, dropout_prob=0.9):
+def train(epochs=2, layers=[30, 30], learning_rate=0.015, act=tf.nn.relu, batch_size=700, dropout_prob=0.9):
     batches = DataSet(batch_size=batch_size)
     tf.reset_default_graph()
     input_size = len(batches.xs[0])
     keep_prob = tf.placeholder(tf.float32)
-    inp, inp_labels, outp, train_op = mlp(layers, input_size, batches.num_labels,
-                                          learning_rate=lr,
-                                          act=act,
-                                          dropout_prob=keep_prob)
+    inp_labels = tf.placeholder(tf.int32, shape=(None,), name='mlp_inp_labels')
+    inp, hidden_layers = mlp(layers, input_size,
+                             act=act,
+                             dropout_prob=keep_prob)
+
+    logits = layer(hidden_layers[-1], batches.num_labels, act=tf.identity, name='logits')
+    outp = tf.argmax(logits, last_dim(logits), name="output")
+
+    loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits, inp_labels))
+    train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)
+
     valx, valy, _ = batches.validation()
     sess = tf.Session()
     sess.run(tf.initialize_all_variables())
@@ -75,19 +77,22 @@ def train(epochs=2, layers=[30, 30], lr=0.015, act=tf.nn.relu, batch_size=700, d
         xb, yb = batches.next_batch()
         run(train_op, (xb, yb))
         if step % 100 == 0:
-            ty_ = sess.run(outp, {inp: xb, keep_prob: 1.0})
-            valy_ = sess.run(outp, {inp: valx, keep_prob: 1.0})
-            print("s={} e={} t_err={:.3f} v_err={:.3f}".format(step, batches.epoch,
-                                                               err(ty_, yb),
-                                                               err(valy_, valy),))
+            ty_, losst = sess.run([outp, loss], {inp: xb, keep_prob: 1.0, inp_labels: yb})
+            valy_, lossv = sess.run([outp, loss], {inp: valx, keep_prob: 1.0, inp_labels: valy})
+            print("s={} e={} t_err={:.3f} v_err={:.3f} losst={:.3f}, lossv={:.3f}".format(step, batches.epoch,
+                                                                                          err(ty_, yb),
+                                                                                          err(valy_, valy), losst,
+                                                                                          lossv))
         if batches.epoch >= epochs:
             break
     batches.reset()
     valy_ = sess.run(outp, {inp: valx, keep_prob: 1.0})
-    print("{} lrs={} dr={} lr={} a={} b={}".format(err(valy_, valy), layers, dropout_prob, lr, act, batch_size))
+    print("{} lrs={} dr={} lr={} a={} b={}".format(err(valy_, valy), layers, dropout_prob, learning_rate, act,
+                                                   batch_size))
     saver.save(sess, 'models/model.ckpt')
     sess.close()
     return err(valy_, valy)
 
+
 if __name__ == '__main__':
-    train(epochs=30, layers=[30, 30, 30], lr=0.009, act=tf.nn.relu, dropout_prob=0.99)
+    train(epochs=300, layers=[100, 80, 50, 30], learning_rate=0.001, act=tf.nn.relu, dropout_prob=0.99)

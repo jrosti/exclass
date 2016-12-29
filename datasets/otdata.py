@@ -25,6 +25,8 @@ class Data(object):
         self.xs_s = None
         self.word2vec = word_vec_fn()
         self.label_limit = num_labels - 1
+        self.max_time = 10
+        self.word_dim = 128
 
     def label_of(self, doc):
         iof = self.label_list.index(doc['sport'])
@@ -45,21 +47,27 @@ class Data(object):
         return xs_norm[:self.tr_mark], yc[:self.tr_mark], xs_norm[self.tr_mark:], yc[self.tr_mark:]
 
     def recurrent_features(self):
-        word_feats = [self._word_features(o) for o in self.docs]
+        word_feats = [self._word_feature(o) for o in self.docs]
         return word_feats[:self.tr_mark], word_feats[self.tr_mark:]
 
-    def input_vector(self, o):
+    def input_vector(self, doc):
         assert self.xs_m is not None, "You must create dataset first"
-        feats = self._dense_features(o)
+        feats = self._dense_features(doc)
         feats = (feats - self.xs_m) / self.xs_s
-        feats = np.concatenate((feats, self._user_one_hot(o), self._month_one_hot(o)), axis=0)
+        feats = np.concatenate((feats, self._user_one_hot(doc), self._month_one_hot(doc)), axis=0)
         return feats
 
-    def _word_features(self, o):
-        sentences = [[self.word2vec('adsf')] + [self.word2vec(t) for t in text_to_tokens(o['title'])]]
-        for s in o['body'].split('.'):
-            sentences.append([self.word2vec(t) for t in text_to_tokens(s)])
-        return sentences
+    def word_feature(self, doc):
+        return self._word_feature(doc)
+
+    def _word_feature(self, o):
+        title_vecs = [self.word2vec('no_such_token')] + \
+                     [self.word2vec(t) for t in text_to_tokens(o['title'])][0:self.max_time-1]
+        body_vecs = [self.word2vec(t) for t in text_to_tokens(o['body'])[0:max(0, self.max_time-len(title_vecs))]]
+        body_title = body_vecs + title_vecs
+        res = body_title + max(0, self.max_time - len(body_title)) * [np.zeros(self.word_dim)]
+        assert len(res) == self.max_time
+        return np.array(res)
 
     def _user_one_hot(self, doc):
         y = np.zeros(len(self.users), dtype=np.float32)
@@ -98,6 +106,20 @@ class Data(object):
         self.tr_mark = int(0.9 * self.count)
 
     def _init_labels(self):
+        label_map = {
+            'Kuntosali': 'Voimaharjoittelu',
+            'Hiihto': 'Luisteluhiihto',
+            'Jooga': 'Jumppa',
+            'Maantiepyöräily': 'Pyöräily',
+            'Maastopyöräily': 'Pyöräily',
+            'Pumppi': 'Jumppa',
+            'Vesijumppa': 'Jumppa',
+            'Cyclocross': 'Pyöräily',
+
+        }
+        for doc in self.docs:
+            if doc['sport'] in label_map.keys():
+                doc['sport'] = label_map[doc['sport']]
         labels = sorted([o['sport'] for o in self.docs])
         freqs = [(key, len(list(group))) for key, group in groupby(labels)]
         by_freqs = sorted(freqs, key=itemgetter(1), reverse=True)
