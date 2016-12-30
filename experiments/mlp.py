@@ -20,27 +20,30 @@ def last_dim(graph_tensor):
 
 
 def stack_layers(bottom, layer_params, builder_func):
-    return list(accumulate([bottom] + layer_params, builder_func))
+    return list(accumulate([(bottom, 0)] + layer_params, builder_func))
 
 
-i = 0
+def _layer(prev_layer, outp_width, act=tf.nn.relu, dropout=None, scope='layer'):
+    inp, index = prev_layer
+    with tf.variable_scope(scope + str(index)):
+        W = tf.get_variable('W', shape=(width(inp), outp_width), dtype=tf.float32,
+                            initializer=orthogonal_initializer())
+        b = tf.get_variable('b', (outp_width,), initializer=tf.constant_initializer())
+        pre_act = tf.matmul(inp, W) + b
+        post_act = act(pre_act, name='act')
+        outp = tf.nn.dropout(post_act, dropout, name='dropout') if dropout is not None else post_act
+        return outp, index + 1
 
 
-def layer(inp, outp_width, act=tf.nn.relu, dropout=None, name=None):
-    global i
-    i += 1
-    W = tf.get_variable('W' + str(i), shape=(width(inp), outp_width), dtype=tf.float32,
-                        initializer=orthogonal_initializer())
-    b = tf.Variable(tf.random_normal([outp_width], stddev=0.35), 'b')
-    pre_act = tf.matmul(inp, W) + b
-    outp = act(pre_act, name=name)
-    return tf.nn.dropout(outp, dropout) if dropout is not None else outp
+def layer(inp, outp_width, act=tf.nn.relu, dropout=None, scope='layer'):
+    outp, _ = _layer((inp, 0), outp_width, act, dropout, scope)
+    return outp
 
 
-def mlp(hidden_layer_widths, input_width, act=tf.nn.relu, dropout_prob=None):
-    inp = tf.placeholder(tf.float32, shape=(None, input_width), name="mlp_input")
-    layerf = lambda input, output_width: layer(input, output_width, act, dropout_prob)
-    hidden_layers = stack_layers(inp, hidden_layer_widths, layerf)
+def mlp(hidden_layer_widths, input_width, act=tf.nn.relu, keep_prob=None, scope="mlp"):
+    inp = tf.placeholder(tf.float32, shape=(None, input_width), name="input")
+    layer_fn = lambda inp, output_width: _layer(inp, output_width, act=act, dropout=keep_prob, scope=scope)
+    hidden_layers = [li[0] for li in stack_layers(inp, hidden_layer_widths, layer_fn)]
     return inp, hidden_layers
 
 
@@ -52,9 +55,9 @@ def train(epochs=None, layers=None, learning_rate=0.001, act=tf.nn.relu, batch_s
     inp_labels = tf.placeholder(tf.int32, shape=(None,), name='mlp_inp_labels')
     inp, hidden_layers = mlp(layers, input_size,
                              act=act,
-                             dropout_prob=keep_prob)
+                             keep_prob=keep_prob)
 
-    logits = layer(hidden_layers[-1], batches.num_labels, act=tf.identity, name='logits')
+    logits = layer(hidden_layers[-1], batches.num_labels, act=tf.identity, scope='logits')
     outp = tf.argmax(logits, last_dim(logits), name="output")
 
     loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits, inp_labels))

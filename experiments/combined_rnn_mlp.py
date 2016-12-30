@@ -3,11 +3,11 @@ import tensorflow as tf
 
 from datasets.dataset import DataSet
 from experiments.mlp import mlp, layer, last_dim
-from experiments.rnn import build_rnn
+from experiments.rnn import build_rnn, LSTM
 
 
-def train(epochs=200, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30], mlp_act=tf.nn.relu,
-          hidden_state_size=128, dropout_keep_prob=0.85,
+def train(epochs=100, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30], mlp_act=tf.nn.relu,
+          hidden_state_size=30, dropout_keep_prob=0.85,
           break_at_ve=0.1161):
     dataset = DataSet(batch_size=batch_size, fetch_recurrent=True)
 
@@ -35,7 +35,7 @@ def train(epochs=200, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 3
     for step in range(1000000):
         batch_mlp_inp_data, batch_labels, batch_sentences = dataset.next_batch()
         run(train_op, (batch_mlp_inp_data, batch_sentences, batch_labels))
-        if step % 100 == 0:
+        if step % 1000 == 0:
             ty_, losst = sess.run([outp, loss], {rnn_input: batch_sentences, mlp_inp: batch_mlp_inp_data,
                                                  inp_labels: batch_labels, keep_prob: 1.0})
             valy_, lossv, rnnlogit, mlplogit = sess.run([outp, loss, rnn_logits, mlp_logits],
@@ -53,7 +53,9 @@ def train(epochs=200, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 3
                 lossv,
                 ent_rnn,
                 ent_mlp))
-        if dataset.epoch >= epochs or v_err < break_at_ve:
+            if v_err < break_at_ve:
+                break
+        if dataset.epoch >= epochs:
             break
 
     saver.save(sess, 'models/rnnmlp.ckpt')
@@ -70,9 +72,11 @@ def rnn_mlp(dataset, hidden_state_size, layers, learning_rate, mlp_act):
     inp_labels = tf.placeholder(tf.int32, shape=(None,), name='inp_labels')
     mlp_inp, hidden_layers = mlp(layers, mlp_input_size,
                                  act=mlp_act,
-                                 dropout_prob=keep_prob)
-    logits_mlp = layer(hidden_layers[-1], dataset.num_labels, act=tf.identity, name='mlp_logits')
-    rnn_input, _, state = build_rnn(dataset.data.max_time, dataset.data.word_dim, hidden_state_size=hidden_state_size)
+                                 keep_prob=keep_prob,
+                                 scope="dense")
+    logits_mlp = layer(hidden_layers[-1], dataset.num_labels, act=tf.identity, scope='logits_mlp')
+    rnn_input, _, state = build_rnn(dataset.data.max_time, dataset.data.word_dim, hidden_state_size=hidden_state_size,
+                                    type=LSTM)
     Wout = tf.get_variable('Wout', (hidden_state_size, dataset.num_labels), initializer=tf.random_normal_initializer())
     bout = tf.get_variable('bout', (dataset.num_labels,))
     logits_rnn = tf.matmul(state, Wout) + bout

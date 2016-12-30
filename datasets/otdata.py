@@ -25,7 +25,7 @@ class Data(object):
         self.xs_s = None
         self.word2vec = word_vec_fn()
         self.label_limit = num_labels - 1
-        self.max_time = 10
+        self.max_time = 15
         self.word_dim = 128
 
     def label_of(self, doc):
@@ -103,7 +103,7 @@ class Data(object):
         self.docs = [d for d in self.docs if d['sport'] != 'Muu merkintä' and d['sport'] != 'Muu laji']
         self.users = sorted(list(set([o['user'] for o in self.docs])))
         self.count = len(self.docs)
-        self.tr_mark = int(0.9 * self.count)
+        self.tr_mark = int(0.95 * self.count)
 
     def _init_labels(self):
         label_map = {

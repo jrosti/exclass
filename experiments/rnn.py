@@ -4,6 +4,10 @@ import tensorflow as tf
 from datasets.dataset import DataSet
 from experiments.initializers import orthogonal_initializer
 
+LSTM = 'LSTM'
+
+BASIC = 'Basic'
+
 
 class SimpleRNNCell(tf.nn.rnn_cell.RNNCell):
     def __init__(self, word_dim, state_size, act=tf.nn.tanh):
@@ -27,9 +31,15 @@ class SimpleRNNCell(tf.nn.rnn_cell.RNNCell):
         return output, output
 
 
-def build_rnn(max_time, word_dim, hidden_state_size):
+def build_rnn(max_time, word_dim, hidden_state_size, type=BASIC):
     input = tf.placeholder(tf.float32, shape=(None, max_time, word_dim), name='rnn_input')
-    outputs, state = tf.nn.dynamic_rnn(SimpleRNNCell(word_dim, hidden_state_size), inputs=input, dtype=tf.float32)
+    if type == BASIC:
+        outputs, state = tf.nn.dynamic_rnn(SimpleRNNCell(word_dim, hidden_state_size), inputs=input, dtype=tf.float32)
+    elif type == LSTM:
+        outputs, state = tf.nn.dynamic_rnn(tf.nn.rnn_cell.LSTMCell(hidden_state_size), inputs=input, dtype=tf.float32)
+        state = outputs[:, -1]
+    else:
+        raise Exception
     return input, outputs, state
 
 

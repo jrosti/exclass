@@ -12,7 +12,7 @@ sess = tf.Session()
 inp, inp_labels, outp, train_op = mlp([100, 80, 50, 30], len(b.xs[0]), b.num_labels,
                                       learning_rate=0.0,
                                       act=tf.nn.relu,
-                                      dropout_prob=None)
+                                      keep_prob=None)
 saver = tf.train.Saver()
 sess.run(tf.initialize_all_variables())
 
