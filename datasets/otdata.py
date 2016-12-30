@@ -82,7 +82,7 @@ class Data(object):
         if os.path.isfile(fname):
             print("Using cached data")
             with open(fname, 'rb') as f:
-                self.docs = pickle.load(f)#[0:10000]
+                self.docs = pickle.load(f)
         else:
             otdb = self.mongo.ontrail.exercise
             projection = dict(duration=1,
@@ -100,7 +100,7 @@ class Data(object):
             shuffle(self.docs)
             with open(fname, 'wb') as f:
                 pickle.dump(self.docs, f)
-
+        self.docs = [d for d in self.docs if d['sport'] != 'Muu merkintä' and d['sport'] != 'Muu laji']
         self.users = sorted(list(set([o['user'] for o in self.docs])))
         self.count = len(self.docs)
         self.tr_mark = int(0.9 * self.count)
@@ -108,14 +108,15 @@ class Data(object):
     def _init_labels(self):
         label_map = {
             'Kuntosali': 'Voimaharjoittelu',
-            'Hiihto': 'Luisteluhiihto',
+            'Luisteluhiihto': 'Hiihto',
+            'Perinteinen hiihto': 'Hiihto',
             'Jooga': 'Jumppa',
             'Maantiepyöräily': 'Pyöräily',
             'Maastopyöräily': 'Pyöräily',
             'Pumppi': 'Jumppa',
             'Vesijumppa': 'Jumppa',
             'Cyclocross': 'Pyöräily',
-
+            'Sisäsoutu': 'Soutu'
         }
         for doc in self.docs:
             if doc['sport'] in label_map.keys():

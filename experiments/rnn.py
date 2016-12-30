@@ -21,8 +21,9 @@ class SimpleRNNCell(tf.nn.rnn_cell.RNNCell):
 
     def __call__(self, inputs, state, scope=None):
         Whh = tf.get_variable('Whh', shape=(self._state_size, self._state_size), initializer=orthogonal_initializer())
-        Wxh = tf.get_variable('Wxh', shape=(self.word_dim, self._state_size))
-        output = self.act(tf.matmul(inputs, Wxh) + tf.matmul(state, Whh))
+        Wxh = tf.get_variable('Wxh', shape=(self.word_dim, self._state_size), initializer=orthogonal_initializer())
+        b = tf.get_variable('bias', shape=(self._state_size,), initializer=tf.random_normal_initializer())
+        output = self.act(tf.matmul(inputs, Wxh) + tf.matmul(state, Whh) + b)
         return output, output
 
 

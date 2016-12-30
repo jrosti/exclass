@@ -44,7 +44,7 @@ def mlp(hidden_layer_widths, input_width, act=tf.nn.relu, dropout_prob=None):
     return inp, hidden_layers
 
 
-def train(epochs=2, layers=[30, 30], learning_rate=0.015, act=tf.nn.relu, batch_size=700, dropout_prob=0.9):
+def train(epochs=None, layers=None, learning_rate=0.001, act=tf.nn.relu, batch_size=700, dropout_prob=0.9):
     batches = DataSet(batch_size=batch_size)
     tf.reset_default_graph()
     input_size = len(batches.xs[0])
