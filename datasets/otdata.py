@@ -61,8 +61,8 @@ class Data(object):
         return self._word_feature(doc)
 
     def _word_feature(self, o):
-        title_vecs = [self.word2vec('no_such_token')] + \
-                     [self.word2vec(t) for t in text_to_tokens(o['title'])][0:self.max_time-1]
+        title_tokens = text_to_tokens(o['title'])
+        title_vecs = [self.word2vec(t) for t in title_tokens][0:self.max_time-1] if len(title_tokens) > 0 else [self.word2vec('no_such_token')]
         body_vecs = [self.word2vec(t) for t in text_to_tokens(o['body'])[0:max(0, self.max_time-len(title_vecs))]]
         body_title = body_vecs + title_vecs
         res = body_title + max(0, self.max_time - len(body_title)) * [np.zeros(self.word_dim)]

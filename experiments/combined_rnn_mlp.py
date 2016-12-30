@@ -8,7 +8,7 @@ from experiments.rnn import build_rnn
 
 def train(epochs=200, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30], mlp_act=tf.nn.relu,
           hidden_state_size=128, dropout_keep_prob=0.85,
-          break_at_ve=0.13):
+          break_at_ve=0.1161):
     dataset = DataSet(batch_size=batch_size, fetch_recurrent=True)
 
     mlp_valid, labels_valid, sentences_valid = dataset.validation()
@@ -53,9 +53,7 @@ def train(epochs=200, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 3
                 lossv,
                 ent_rnn,
                 ent_mlp))
-        if dataset.epoch >= epochs:
-            break
-        if v_err < break_at_ve:
+        if dataset.epoch >= epochs or v_err < break_at_ve:
             break
 
     saver.save(sess, 'models/rnnmlp.ckpt')
@@ -89,7 +87,7 @@ def batch_mean_entropy(logits):
     return np.mean([entropy(softmax(it)) for it in logits])
 
 
-EPS = 1e-11
+EPS = 1e-9
 
 
 def entropy(p):
