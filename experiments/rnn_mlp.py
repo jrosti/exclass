@@ -60,9 +60,6 @@ def train(epochs=50, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30
 
     saver.save(sess, 'models/rnnmlp.ckpt')
     dataset.reset()
-    #    valy_ = sess.run(outp, {inp: to_input(valrec), keep_prob: 1.0})
-    #    print("{} lrs={} dr={} lr={} a={} b={}".format(err(valy_, valy), layers, dropout_prob, lr, act, batch_size))
-    #    saver.save(sess, 'models/model.ckpt')
     sess.close()
 
 
@@ -73,8 +70,8 @@ def rnn_mlp(dataset, hidden_state_size, layers, learning_rate, mlp_act):
     mlp_inp, hidden_layers = mlp(layers, mlp_input_size,
                                  act=mlp_act,
                                  keep_prob=keep_prob,
-                                 scope="dense")
-    logits_mlp = layer(hidden_layers[-1], dataset.num_labels, act=tf.identity, scope='logits_mlp')
+                                 name="dense")
+    logits_mlp = layer(hidden_layers[-1], dataset.num_labels, act=tf.identity, name='logits_mlp')
     rnn_input, _, state = build_rnn(dataset.data.max_time, dataset.data.word_dim, hidden_state_size=hidden_state_size,
                                     type=LSTM)
     Wout = tf.get_variable('Wout', (hidden_state_size, dataset.num_labels), initializer=tf.random_normal_initializer())
