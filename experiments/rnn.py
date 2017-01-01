@@ -43,8 +43,8 @@ def build_rnn(max_time, word_dim, hidden_state_size, type=BASIC):
     return input, outputs, state
 
 
-def rnn_classifier(learning_rate, num_labels, max_time, word_dim, hidden_state_size=100):
-    inp, outputs, state = build_rnn(max_time, word_dim, hidden_state_size)
+def rnn_classifier(learning_rate, num_labels, max_time, word_dim, hidden_state_size=30):
+    inp, outputs, state = build_rnn(max_time, word_dim, hidden_state_size, type=LSTM)
     Wout = tf.get_variable('Wout', (hidden_state_size, num_labels), initializer=orthogonal_initializer())
     bout = tf.get_variable('bout', (num_labels,))
     logits = tf.matmul(state, Wout) + bout
@@ -55,7 +55,7 @@ def rnn_classifier(learning_rate, num_labels, max_time, word_dim, hidden_state_s
     return inp, inp_labels, loss, outp, train_op
 
 
-def train(epochs=2, batch_size=50, learning_rate=.001):
+def train(epochs=20, batch_size=200, learning_rate=.001):
     dataset = DataSet(batch_size=batch_size, fetch_recurrent=True)
     tf.reset_default_graph()
 
@@ -81,7 +81,7 @@ def train(epochs=2, batch_size=50, learning_rate=.001):
     for step in range(1000000):
         _, batch_labels, batch_sentences = dataset.next_batch()
         run(train_op, (batch_sentences, batch_labels))
-        if step % 100 == 0:
+        if step % 1000 == 0:
             ty_, losst = sess.run([outp, loss], {inp: batch_sentences, inp_labels: batch_labels})
             valy_, lossv = sess.run([outp, loss], {inp: sentences_valid, inp_labels: labels_valid})
             print("s={} e={} t_err={:.3f} v_err={:.3f} losst={:.2f} lossv={:.2f}".format(step, dataset.epoch,

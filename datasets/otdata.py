@@ -57,7 +57,7 @@ class Data(object):
     def recurrent_features(self):
         print("Loading recurrent features")
         word_feats = [self._word_feature(o) for o in self.docs]
-        return word_feats[:self.tr_mark], word_feats[self.tr_mark:]
+        return np.array(word_feats[:self.tr_mark]), np.array(word_feats[self.tr_mark:])
 
     def input_vector(self, doc):
         if self.xs_m is None:
