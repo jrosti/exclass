@@ -25,7 +25,7 @@ import numpy as np
 import tensorflow as tf
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
-from . import corpus
+import corpus
 
 words = corpus.load()
 print('Data size', len(words))
