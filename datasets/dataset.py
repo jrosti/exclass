@@ -12,6 +12,7 @@ class DataSet(object):
         self.epoch = 0
         self.batch_size = batch_size
         self.fetch_recurrent = fetch_recurrent
+        self.num_dense = self.data.num_dense
         if fetch_recurrent:
             self.s_train, self.s_valid = self.data.recurrent_features()
         else:
