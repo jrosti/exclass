@@ -29,15 +29,19 @@ def extract_corpus():
     projection = dict(title=1,
                       body=1,
                       sport=1,
-                      user=1)
+                      user=1, comments=1)
     docs = list(otdb.find({}, projection))
     assert len(docs) > 190000
     sorted_docs = sorted(docs, key=operator.itemgetter('sport'))
     for doc in sorted_docs:
+        corpus.extend(text_to_tokens(doc['sport']))
         corpus.extend(text_to_tokens(doc['title']))
-        us = doc['user'].lower().split(" ")
-        corpus.extend(us)
+        corpus.extend(text_to_tokens(doc['user']))
         corpus.extend(text_to_tokens(doc['body']))
+        if 'comments' in doc:
+            for c in doc['comments']:
+                if 'body' in c and c['body']:
+                    corpus.extend(text_to_tokens(c['body']))
     assert len(corpus) > 300000
     with open('corpus.txt', 'w') as f:
         for w in corpus:
@@ -49,3 +53,7 @@ def load():
     print("Loading corpus")
     with open('corpus.txt', 'r') as f:
         return f.read().splitlines()
+
+
+if __name__ == '__main__':
+    extract_corpus()
