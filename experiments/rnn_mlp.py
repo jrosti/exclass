@@ -7,7 +7,7 @@ from experiments.rnn import build_rnn, LSTM
 
 
 def train(epochs=50, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30], mlp_act=tf.nn.relu,
-          hidden_state_size=30, dropout_keep_prob=0.85,
+          hidden_state_size=30, dropout_keep_prob=0.95,
           break_at_ve=0.07):
     dataset = DataSet(batch_size=batch_size, fetch_recurrent=True)
 
@@ -34,12 +34,13 @@ def train(epochs=50, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30
         a = y != y_
         return np.sum(a) / float(y.shape[0])
 
-    mwf, rwf = 0., 1.
+    mwf, rwf = 1., 0.
     for step in range(1000000):
         if 10 <= dataset.epoch < 20:
-            mwf, rwf = 1., 0.
+            mwf, rwf = 0., 1.
         elif dataset.epoch >= 20:
             mwf, rwf = 1., 1.
+
         batch_mlp_inp_data, batch_labels, batch_sentences = dataset.next_batch()
         run(train_op, (batch_mlp_inp_data, batch_sentences, batch_labels), dropout_keep_prob, mlp_weight_factor=mwf,
             rnn_weight_factor=rwf)

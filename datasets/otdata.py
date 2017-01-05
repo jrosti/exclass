@@ -24,7 +24,7 @@ class Data(object):
         self.num_sparse = None
         self.word2vec = word_vec_fn()
         self.label_limit = num_labels - 1
-        self.max_time = 50
+        self.max_time = 40
         self.word_dim = 128
 
     def label_of(self, doc):
@@ -56,8 +56,12 @@ class Data(object):
 
     def recurrent_features(self):
         print("Loading recurrent features")
-        word_feats = [self._word_feature(o) for o in self.docs]
-        return np.array(word_feats[:self.tr_mark]), np.array(word_feats[self.tr_mark:])
+        if os.path.isfile('word_feature.npy'):
+            word_feats = np.load('word_feature.npy')
+        else:
+            word_feats = np.array([self._word_feature(o) for o in self.docs])
+            np.save('word_feature', word_feats)
+        return word_feats[:self.tr_mark], word_feats[self.tr_mark:]
 
     def input_vector(self, doc):
         if self.xs_m is None:
