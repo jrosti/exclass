@@ -36,9 +36,9 @@ def train(epochs=50, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30
 
     mwf, rwf = 1., 0.
     for step in range(1000000):
-        if 10 <= dataset.epoch < 20:
+        if 30 <= dataset.epoch < 60:
             mwf, rwf = 0., 1.
-        elif dataset.epoch >= 20:
+        elif dataset.epoch >= 60:
             mwf, rwf = 1., 1.
 
         batch_mlp_inp_data, batch_labels, batch_sentences = dataset.next_batch()
