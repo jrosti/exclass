@@ -14,7 +14,7 @@ dataset = DataSet(batch_size=1, fetch_recurrent=True)
 
 mlp_valid, labels_valid, sentences_valid = dataset.validation()
 
-inp_labels, keep_prob, rnn_logits, loss, mlp_inp, mlp_logits, outp, rnn_input, train_op = rnn_mlp(dataset,
+inp_labels, keep_prob, rnn_logits, loss, mlp_inp, mlp_logits, outp, rnn_input, train_op, out_rnn, out_mlp, mlp_weight, rnn_weight = rnn_mlp(dataset,
                                                                                                   lstm_hidden_state_size,
                                                                                                   layers,
                                                                                                   0.1,
