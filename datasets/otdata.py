@@ -24,7 +24,7 @@ class Data(object):
         self.num_sparse = None
         self.word2vec = word_vec_fn()
         self.label_limit = num_labels - 1
-        self.max_time = 40
+        self.max_time = 20
         self.word_dim = 128
 
     def label_of(self, doc):
