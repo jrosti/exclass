@@ -54,6 +54,8 @@ def rnn_classifier(learning_rate, num_labels, max_time, word_dim, hidden_state_s
     outp = tf.argmax(logits, 1, name="output")
     return inp, inp_labels, loss, outp, train_op
 
+tf.one_hot
+
 
 def train(epochs=20, batch_size=200, learning_rate=.001):
     dataset = DataSet(batch_size=batch_size, fetch_recurrent=True)

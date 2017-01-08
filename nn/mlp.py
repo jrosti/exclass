@@ -98,4 +98,4 @@ def train(epochs=None, layers=None, learning_rate=0.001, act=tf.nn.relu, batch_s
 
 
 if __name__ == '__main__':
-    train(epochs=300, layers=[200, 80, 50, 30], learning_rate=0.001, act=tf.nn.relu, dropout_prob=0.99)
+    train(epochs=150, layers=[300, 200, 100], learning_rate=0.001, act=tf.nn.relu, dropout_prob=0.85)
