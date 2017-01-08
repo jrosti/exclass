@@ -9,6 +9,7 @@ from pymongo import MongoClient
 
 from utils.corpus import text_to_tokens
 from .data_word2vec import word_vec_fn
+from .character import Character
 from snowballstemmer.finnish_stemmer import FinnishStemmer
 
 
@@ -29,13 +30,7 @@ class Data(object):
         self.word_dim = 128
         self.stem = FinnishStemmer().stemWord
         self.word2vec_fn = word_vec_fn()
-
-    def word2vec(self, word, stem=False):
-        return self.word2vec_fn(self.stem(word)) if stem else self.word2vec_fn(word)
-
-    def label_of(self, doc):
-        iof = self.label_list.index(doc['sport'])
-        return self.label_limit if iof >= self.label_limit else iof
+        self.character = Character(self)
 
     def create_dataset(self, user_one_hot=True, month_one_hot=True, word_dot_prod=True):
         yc = np.array([self.label_of(o) for o in self.docs])
@@ -133,6 +128,13 @@ class Data(object):
         self.count = len(self.docs)
         self.tr_mark = int(0.9 * self.count)
 
+    def word2vec(self, word, stem=True):
+        return self.word2vec_fn(self.stem(word)) if stem else self.word2vec_fn(word)
+
+    def label_of(self, doc):
+        iof = self.label_list.index(doc['sport'])
+        return self.label_limit if iof >= self.label_limit else iof
+
     def _init_labels(self):
         for doc in self.docs:
             if doc['sport'] in self.LABEL_MAP.keys():
@@ -154,9 +156,9 @@ class Data(object):
         return y
 
     def _avg_word_dot_prod(self, doc):
-        return np.array([self.average_prodcut(label, doc) for label in self.label_list])
+        return np.array([self.average_product(label, doc) for label in self.label_list])
 
-    def average_prodcut(self, label, doc):
+    def average_product(self, label, doc):
         aliases = [k.lower() for k, v in self.LABEL_MAP.items() if v == label]
         aliases.extend(label.lower())
         tokens = (text_to_tokens(doc['title']) + text_to_tokens(doc['body']) + ['no-such-token'])[:25]
