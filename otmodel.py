@@ -6,9 +6,9 @@ from nn.mlp import mlp, layer, last_dim
 from nn.rnn import build_rnn, LSTM
 
 
-def train(epochs=150, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30], mlp_act=tf.nn.relu,
+def train(epochs=250, batch_size=100, learning_rate=.001, layers=[400, 200, 100], mlp_act=tf.nn.relu,
           hidden_state_size=30, dropout_keep_prob=0.85,
-          break_at_ve=0.091):
+          break_at_ve=0.095):
     dataset = DataSet(batch_size=batch_size, fetch_recurrent=True)
 
     mlp_valid, labels_valid, sentences_valid = dataset.validation()
