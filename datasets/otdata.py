@@ -11,7 +11,9 @@ from utils.corpus import text_to_tokens
 from .data_word2vec import word_vec_fn
 from snowballstemmer.finnish_stemmer import FinnishStemmer
 
+
 class Data(object):
+
     def __init__(self, num_labels):
         self.mongo = MongoClient('mongodb://localhost/ontrail')
         self.docs = []
@@ -52,7 +54,7 @@ class Data(object):
                 moh = np.array([self._month_one_hot(o) for o in self.docs])
                 xs_norm = np.concatenate((xs_norm, moh), axis=1)
             if word_dot_prod:
-                wdp = np.array([self._max_word_dot_prod(o) for o in self.docs])
+                wdp = np.array([self._avg_word_dot_prod(o) for o in self.docs])
                 xs_norm = np.concatenate((xs_norm, wdp), axis=1)
             self.num_sparse = len(xs_norm[0]) - self.num_dense
             np.save('xs_norm', xs_norm)
@@ -75,7 +77,7 @@ class Data(object):
             self.xs_s = np.std(dense, axis=0)
         feats = self._dense_features(doc)
         feats = (feats - self.xs_m) / self.xs_s
-        feats = np.concatenate((feats, self._user_one_hot(doc), self._month_one_hot(doc), self._max_word_dot_prod(doc)),
+        feats = np.concatenate((feats, self._user_one_hot(doc), self._month_one_hot(doc), self._avg_word_dot_prod(doc)),
                                axis=0)
         return feats
 
@@ -151,16 +153,16 @@ class Data(object):
         y[doc['creationDate'].month - 1] = 1.0
         return y
 
-    def _max_word_dot_prod(self, doc):
-        return np.array([self.max_product(label, doc) for label in self.label_list])
+    def _avg_word_dot_prod(self, doc):
+        return np.array([self.average_prodcut(label, doc) for label in self.label_list])
 
-    def max_product(self, label, doc):
+    def average_prodcut(self, label, doc):
         aliases = [k.lower() for k, v in self.LABEL_MAP.items() if v == label]
         aliases.extend(label.lower())
         tokens = (text_to_tokens(doc['title']) + text_to_tokens(doc['body']) + ['no-such-token'])[:25]
-        return max([np.dot(self.word2vec(token), self.word2vec(alias))
-                    for token in tokens
-                    for alias in aliases])
+        return np.average([np.dot(self.word2vec(token), self.word2vec(alias))
+                          for token in tokens
+                          for alias in aliases])
 
     LABEL_MAP = {
         'Kuntosali': 'Voimaharjoittelu',
