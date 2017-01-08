@@ -26,7 +26,7 @@ class Data(object):
         self.num_dense = None
         self.num_sparse = None
         self.label_limit = num_labels - 1
-        self.max_time = 20
+        self.max_time = 30
         self.word_dim = 128
         self.stem = FinnishStemmer().stemWord
         self.word2vec_fn = word_vec_fn()

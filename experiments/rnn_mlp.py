@@ -8,7 +8,7 @@ from experiments.rnn import build_rnn, LSTM
 
 def train(epochs=150, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30], mlp_act=tf.nn.relu,
           hidden_state_size=30, dropout_keep_prob=0.85,
-          break_at_ve=0.096):
+          break_at_ve=0.091):
     dataset = DataSet(batch_size=batch_size, fetch_recurrent=True)
 
     mlp_valid, labels_valid, sentences_valid = dataset.validation()
