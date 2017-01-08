@@ -1,9 +1,7 @@
-import os
-
 import tensorflow as tf
 
 from datasets.dataset import DataSet
-from experiments.rnn_mlp import rnn_mlp
+from otmodel import rnn_mlp
 
 layers = [100, 80, 50, 30]
 mlp_act = tf.nn.relu

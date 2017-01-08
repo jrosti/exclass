@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 
 from datasets.dataset import DataSet
-from experiments.mlp import mlp, layer, last_dim
-from experiments.rnn import build_rnn, LSTM
+from nn.mlp import mlp, layer, last_dim
+from nn.rnn import build_rnn, LSTM
 
 
 def train(epochs=150, batch_size=100, learning_rate=.001, layers=[100, 80, 50, 30], mlp_act=tf.nn.relu,

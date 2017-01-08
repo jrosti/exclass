@@ -5,36 +5,23 @@ import tensorflow as tf
 import numpy as np
 
 from datasets.dataset import DataSet
-from nn.mlp import mlp
+from nn.rnn import rnn_classifier, to_input
 
-b = DataSet(100)
+b = DataSet(100, fetch_recurrent=True)
 sess = tf.Session()
-inp, inp_labels, outp, train_op = mlp([100, 80, 50, 30], len(b.xs[0]), b.num_labels,
-                                      learning_rate=0.0,
-                                      act=tf.nn.relu,
-                                      keep_prob=None)
+inp, inp_labels, loss, outp, train_op = rnn_classifier(0., b.num_labels)
 saver = tf.train.Saver()
 sess.run(tf.initialize_all_variables())
 
 # Restore variables from disk.
-model_name = 'models/model.ckpt'  # sys.argv[1]
+model_name = 'models/rnn.ckpt'  # sys.argv[1]
 assert os.path.isfile(model_name), "Pass model name as argument."
 saver.restore(sess, model_name)
 print("Model restored.")
 
-ys_ = sess.run(outp, {inp: b.xs})
-
-s = sum(b.ys == ys_)
-print(s/len(b.ys))
-
-xs2 = [b.data.input_vector(h) for h in b.data.docs]
-ys2_ = sess.run(outp, {inp: xs2})
-
-labels = np.array([b.data.label_of(x) for x in b.data.docs])
-print(sum(ys2_ == labels)/len(ys2_))
-
-hs = [h for h in b.data.docs[int(len(b.data.docs)*0.9):]]
-ps = sess.run(outp, {inp: [b.data.input_vector(h) for h in hs]})
+hs = [h for h in b.data.docs if h['user'] == 'Peppi']
+feats = [b.data.word_feature(h) for h in hs]
+ps = sess.run(outp, {inp: to_input(feats)})
 
 
 def sport(lbl):

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from experiments.mlp import mlp, layer, last_dim
+from nn.mlp import mlp, layer, last_dim
 from datasets.dataset import DataSet
 
 DENSE_DEFAULT = {

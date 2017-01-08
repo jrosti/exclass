@@ -8,7 +8,7 @@ class Character(object):
         self.char_index = None
 
     def setup(self):
-        self.char_index = sorted(list(reduce(lambda acc, d: acc | set(d['title']), self.data.docs, set())))
+        self.char_index = sorted(list(reduce(lambda a, d: a | set(d['title'].lower()), self.data.docs, set())))
 
     def char_one_hot(self):
         pass

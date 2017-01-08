@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from datasets.dataset import DataSet
-from experiments.initializers import orthogonal_initializer
+from nn.initializers import orthogonal_initializer
 
 
 def shape(graph_tensor):

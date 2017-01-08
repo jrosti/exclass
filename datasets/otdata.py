@@ -32,7 +32,7 @@ class Data(object):
         self.word2vec_fn = word_vec_fn()
         self.character = Character(self)
 
-    def create_dataset(self, user_one_hot=True, month_one_hot=True, word_dot_prod=True):
+    def create_dataset(self, user_one_hot=True, month_one_hot=True, word_dot_prod=False):
         yc = np.array([self.label_of(o) for o in self.docs])
         if os.path.isfile('xs_norm.npy'):
             xs_norm = np.load('xs_norm.npy')
@@ -124,7 +124,7 @@ class Data(object):
             with open(fname, 'wb') as f:
                 pickle.dump(self.docs, f)
         self.docs = [d for d in self.docs if d['sport'] != 'Muu merkintä' and d['sport'] != 'Muu laji']
-        self.users = sorted(list(set([o['user'] for o in self.docs])))
+        self.users = sorted(list(set([o['user'] for o in self.docs if o['creationDate'].year == 2016])))
         self.count = len(self.docs)
         self.tr_mark = int(0.9 * self.count)
 
