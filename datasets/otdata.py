@@ -9,9 +9,12 @@ from pymongo import MongoClient
 
 from utils.corpus import text_to_tokens
 from .data_word2vec import word_vec_fn
+from .character import Character
+from snowballstemmer.finnish_stemmer import FinnishStemmer
 
 
 class Data(object):
+
     def __init__(self, num_labels):
         self.mongo = MongoClient('mongodb://localhost/ontrail')
         self.docs = []
@@ -22,14 +25,12 @@ class Data(object):
         self.xs_s = None
         self.num_dense = None
         self.num_sparse = None
-        self.word2vec = word_vec_fn()
         self.label_limit = num_labels - 1
         self.max_time = 30
         self.word_dim = 128
-
-    def label_of(self, doc):
-        iof = self.label_list.index(doc['sport'])
-        return self.label_limit if iof >= self.label_limit else iof
+        self.stem = FinnishStemmer().stemWord
+        self.word2vec_fn = word_vec_fn()
+        self.character = Character(self)
 
     def create_dataset(self, user_one_hot=True, month_one_hot=True, word_dot_prod=True):
         yc = np.array([self.label_of(o) for o in self.docs])
@@ -48,7 +49,7 @@ class Data(object):
                 moh = np.array([self._month_one_hot(o) for o in self.docs])
                 xs_norm = np.concatenate((xs_norm, moh), axis=1)
             if word_dot_prod:
-                wdp = np.array([self._max_word_dot_prod(o) for o in self.docs])
+                wdp = np.array([self._avg_word_dot_prod(o) for o in self.docs])
                 xs_norm = np.concatenate((xs_norm, wdp), axis=1)
             self.num_sparse = len(xs_norm[0]) - self.num_dense
             np.save('xs_norm', xs_norm)
@@ -71,7 +72,7 @@ class Data(object):
             self.xs_s = np.std(dense, axis=0)
         feats = self._dense_features(doc)
         feats = (feats - self.xs_m) / self.xs_s
-        feats = np.concatenate((feats, self._user_one_hot(doc), self._month_one_hot(doc), self._max_word_dot_prod(doc)),
+        feats = np.concatenate((feats, self._user_one_hot(doc), self._month_one_hot(doc), self._avg_word_dot_prod(doc)),
                                axis=0)
         return feats
 
@@ -79,10 +80,11 @@ class Data(object):
         return self._word_feature(doc)
 
     def _word_feature(self, o):
+        do_stem = True
         title_tokens = text_to_tokens(o['title'])
-        title_vecs = [self.word2vec(t) for t in title_tokens][0:self.max_time - 1] if len(title_tokens) > 0 else [
+        title_vecs = [self.word2vec(t, stem=do_stem) for t in title_tokens][0:self.max_time - 1] if len(title_tokens) > 0 else [
             self.word2vec('no_such_token')]
-        body_vecs = [self.word2vec(t) for t in text_to_tokens(o['body'])[0:max(0, self.max_time - len(title_vecs))]]
+        body_vecs = [self.word2vec(t, stem=do_stem) for t in text_to_tokens(o['body'])[0:max(0, self.max_time - len(title_vecs))]]
         body_title = body_vecs + title_vecs
         res = body_title + max(0, self.max_time - len(body_title)) * [np.zeros(self.word_dim)]
         assert len(res) == self.max_time
@@ -90,7 +92,9 @@ class Data(object):
 
     def _user_one_hot(self, doc):
         y = np.zeros(len(self.users), dtype=np.float32)
-        y[self.users.index(doc['user'])] = 1.0
+        u = doc['user']
+        if u in self.users:
+            y[self.users.index(doc['user'])] = 1.0
         return y
 
     def _label_of(self, one_hot_vec):
@@ -124,6 +128,13 @@ class Data(object):
         self.count = len(self.docs)
         self.tr_mark = int(0.9 * self.count)
 
+    def word2vec(self, word, stem=True):
+        return self.word2vec_fn(self.stem(word)) if stem else self.word2vec_fn(word)
+
+    def label_of(self, doc):
+        iof = self.label_list.index(doc['sport'])
+        return self.label_limit if iof >= self.label_limit else iof
+
     def _init_labels(self):
         for doc in self.docs:
             if doc['sport'] in self.LABEL_MAP.keys():
@@ -144,16 +155,16 @@ class Data(object):
         y[doc['creationDate'].month - 1] = 1.0
         return y
 
-    def _max_word_dot_prod(self, doc):
-        return np.array([self.max_product(label, doc) for label in self.label_list])
+    def _avg_word_dot_prod(self, doc):
+        return np.array([self.average_product(label, doc) for label in self.label_list])
 
-    def max_product(self, label, doc):
+    def average_product(self, label, doc):
         aliases = [k.lower() for k, v in self.LABEL_MAP.items() if v == label]
         aliases.extend(label.lower())
         tokens = (text_to_tokens(doc['title']) + text_to_tokens(doc['body']) + ['no-such-token'])[:25]
-        return max([np.dot(self.word2vec(token), self.word2vec(alias))
-                    for token in tokens
-                    for alias in aliases])
+        return np.average([np.dot(self.word2vec(token), self.word2vec(alias))
+                          for token in tokens
+                          for alias in aliases])
 
     LABEL_MAP = {
         'Kuntosali': 'Voimaharjoittelu',
