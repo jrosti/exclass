@@ -19,15 +19,20 @@ class Data(object):
         self.mongo = MongoClient('mongodb://localhost/ontrail')
         self.docs = []
         self.label_list = []
+
+        self.label_limit = num_labels - 1
+        self.user_count = 100
+        self.max_time = 30
+        self.word_dim = 128
+
         self._init_data()
         self._init_labels()
+
         self.xs_m = None
         self.xs_s = None
         self.num_dense = None
         self.num_sparse = None
-        self.label_limit = num_labels - 1
-        self.max_time = 30
-        self.word_dim = 128
+
         self.stem = FinnishStemmer().stemWord
         self.word2vec_fn = word_vec_fn()
         self.character = Character(self)
@@ -133,7 +138,7 @@ class Data(object):
             with open(fname, 'wb') as f:
                 pickle.dump(self.docs, f)
         self.docs = [d for d in self.docs if d['sport'] != 'Muu merkintä' and d['sport'] != 'Muu laji']
-        self.users = self._users()[:50]
+        self.users = self._users()[:self.user_count]
         self.count = len(self.docs)
         self.tr_mark = int(0.9 * self.count)
 
