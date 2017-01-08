@@ -11,3 +11,4 @@ dependencies:
   - configargparse==0.10.0
   - urllib3==1.14
   - neobunch==2.0.2
+  - snowballstemmer

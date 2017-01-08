@@ -26,13 +26,13 @@ sess.run(tf.initialize_all_variables())
 
 # Restore variables from disk.
 model_name = 'models/rnnmlp.ckpt'  # sys.argv[1]
-assert os.path.isfile(model_name), "Pass model name as argument."
+#assert os.path.isfile(model_name), "Pass model name as argument."
 saver.restore(sess, model_name)
 print("Model restored.")
-hs = [h for h in dataset.data.docs if h['user'] in ['KapteeniSolisluu', 'Pumppi60', 'Geoeläin', 'Peppi']]
+hs = [h for h in dataset.data.docs[190000:]]
 rnni = [dataset.data.word_feature(h) for h in hs]
 mlpi = [dataset.data.input_vector(h) for h in hs]
-ps = sess.run(outp, {rnn_input: rnni, mlp_inp: mlpi, keep_prob: 1.0})
+ps = sess.run(outp, {rnn_input: rnni, mlp_inp: mlpi, keep_prob: 1.0, mlp_weight: 1.0, rnn_weight: 1.0})
 
 
 def sport(lbl):
@@ -52,23 +52,24 @@ print("""
 
 for h, p in zip(hs, ps):
     correct = dataset.data.label_of(h) == p
-    dist = "{:.1f}".format(h['distance'] / 1000.0) if 'distance' in h and h['distance'] else '-'
-    dur = "{:.0f}".format(h['duration'] / 100.0 / 60.0) if 'duration' in h and h['duration'] else '-'
-    print("""
-<tr>
-<td><a href=\"http://ontrail.net/#ex/{}\">{}</a></td>
-<td><font color=\"{}\">{}</font></td>
-<td><font color=\"{}\">{} {}</font></td>
-<td>{}</td>
-<td>{} km</td>
-<td>{} min</td>
-</tr>
-""".format(h['_id'], h['title'],
-           'green' if correct else 'red', h['sport'],
-           'green' if correct else 'red', sport(p), 'O' if correct else 'V',
-           h['user'],
-           dist,
-           dur))
+    if not correct:
+        dist = "{:.1f}".format(h['distance'] / 1000.0) if 'distance' in h and h['distance'] else '-'
+        dur = "{:.0f}".format(h['duration'] / 100.0 / 60.0) if 'duration' in h and h['duration'] else '-'
+        print("""
+    <tr>
+    <td><a href=\"http://ontrail.net/#ex/{}\">{}</a></td>
+    <td><font color=\"{}\">{}</font></td>
+    <td><font color=\"{}\">{} {}</font></td>
+    <td>{}</td>
+    <td>{} km</td>
+    <td>{} min</td>
+    </tr>
+    """.format(h['_id'], h['title'],
+               'green' if correct else 'red', h['sport'],
+               'green' if correct else 'red', sport(p), 'O' if correct else 'V',
+               h['user'],
+               dist,
+               dur))
 
 print("""
 

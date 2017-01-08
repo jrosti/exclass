@@ -9,7 +9,7 @@ from pymongo import MongoClient
 
 from utils.corpus import text_to_tokens
 from .data_word2vec import word_vec_fn
-
+from snowballstemmer.finnish_stemmer import FinnishStemmer
 
 class Data(object):
     def __init__(self, num_labels):
@@ -22,10 +22,14 @@ class Data(object):
         self.xs_s = None
         self.num_dense = None
         self.num_sparse = None
-        self.word2vec = word_vec_fn()
         self.label_limit = num_labels - 1
         self.max_time = 20
         self.word_dim = 128
+        self.stem = FinnishStemmer().stemWord
+        self.word2vec_fn = word_vec_fn()
+
+    def word2vec(self, word, stem=False):
+        return self.word2vec_fn(self.stem(word)) if stem else self.word2vec_fn(word)
 
     def label_of(self, doc):
         iof = self.label_list.index(doc['sport'])
@@ -79,10 +83,11 @@ class Data(object):
         return self._word_feature(doc)
 
     def _word_feature(self, o):
+        do_stem = True
         title_tokens = text_to_tokens(o['title'])
-        title_vecs = [self.word2vec(t) for t in title_tokens][0:self.max_time - 1] if len(title_tokens) > 0 else [
+        title_vecs = [self.word2vec(t, stem=do_stem) for t in title_tokens][0:self.max_time - 1] if len(title_tokens) > 0 else [
             self.word2vec('no_such_token')]
-        body_vecs = [self.word2vec(t) for t in text_to_tokens(o['body'])[0:max(0, self.max_time - len(title_vecs))]]
+        body_vecs = [self.word2vec(t, stem=do_stem) for t in text_to_tokens(o['body'])[0:max(0, self.max_time - len(title_vecs))]]
         body_title = body_vecs + title_vecs
         res = body_title + max(0, self.max_time - len(body_title)) * [np.zeros(self.word_dim)]
         assert len(res) == self.max_time
@@ -90,7 +95,9 @@ class Data(object):
 
     def _user_one_hot(self, doc):
         y = np.zeros(len(self.users), dtype=np.float32)
-        y[self.users.index(doc['user'])] = 1.0
+        u = doc['user']
+        if u in self.users:
+            y[self.users.index(doc['user'])] = 1.0
         return y
 
     def _label_of(self, one_hot_vec):
