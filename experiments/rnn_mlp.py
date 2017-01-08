@@ -109,7 +109,7 @@ def entropy(p):
 
 
 def softmax(x):
-    xn = x / np.max(x)
+    xn = x - np.max(x)
     return np.exp(xn) / (np.sum(np.exp(xn), axis=0) + EPS)
 
 
