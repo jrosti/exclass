@@ -72,12 +72,19 @@ class Data(object):
             self.xs_s = np.std(dense, axis=0)
         feats = self._dense_features(doc)
         feats = (feats - self.xs_m) / self.xs_s
-        feats = np.concatenate((feats, self._user_one_hot(doc), self._month_one_hot(doc), self._avg_word_dot_prod(doc)),
+        feats = np.concatenate((feats, self._user_one_hot(doc), self._month_one_hot(doc)),  #, self._avg_word_dot_prod(doc)),
                                axis=0)
         return feats
 
     def word_feature(self, doc):
         return self._word_feature(doc)
+
+    def word2vec(self, word, stem=True):
+        return self.word2vec_fn(self.stem(word)) if stem else self.word2vec_fn(word)
+
+    def label_of(self, doc):
+        iof = self.label_list.index(doc['sport'])
+        return self.label_limit if iof >= self.label_limit else iof
 
     def _word_feature(self, o):
         do_stem = True
@@ -91,10 +98,12 @@ class Data(object):
         return np.array(res)
 
     def _user_one_hot(self, doc):
-        y = np.zeros(len(self.users), dtype=np.float32)
+        y = np.zeros(len(self.users) + 1, dtype=np.float32)
         u = doc['user']
         if u in self.users:
-            y[self.users.index(doc['user'])] = 1.0
+            y[self.users.index(doc['user']) + 1] = 1.0
+        else:
+            y[0] = 1.0
         return y
 
     def _label_of(self, one_hot_vec):
@@ -124,16 +133,15 @@ class Data(object):
             with open(fname, 'wb') as f:
                 pickle.dump(self.docs, f)
         self.docs = [d for d in self.docs if d['sport'] != 'Muu merkintä' and d['sport'] != 'Muu laji']
-        self.users = sorted(list(set([o['user'] for o in self.docs if o['creationDate'].year == 2016])))
+        self.users = self._users()[:50]
         self.count = len(self.docs)
         self.tr_mark = int(0.9 * self.count)
 
-    def word2vec(self, word, stem=True):
-        return self.word2vec_fn(self.stem(word)) if stem else self.word2vec_fn(word)
-
-    def label_of(self, doc):
-        iof = self.label_list.index(doc['sport'])
-        return self.label_limit if iof >= self.label_limit else iof
+    def _users(self):
+        y16us = sorted([o['user'] for o in self.docs if o['creationDate'].year == 2016])
+        freqs = [(key, len(list(group))) for key, group in groupby(y16us)]
+        by_freqs = sorted(freqs, key=itemgetter(1), reverse=True)
+        return [k[0] for k in by_freqs]
 
     def _init_labels(self):
         for doc in self.docs:
